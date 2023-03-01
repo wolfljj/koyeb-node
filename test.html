@@ -1,0 +1,27 @@
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"
+    integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+"
+    crossorigin="anonymous"></script>
+<script>
+    const socket = io("ws://websocket-wolfljj.koyeb.app", {
+        // withCredentials: true,
+
+        // origin: "http://localhost:3000",
+        // extraHeaders: {
+        //     "my-custom-header": "abcd"
+        // }
+    });
+    socket.on("connect", () => {
+        console.log('================connect')
+        console.log(socket.id); // x8WIv7-mJelg7on_ALbx
+    });
+
+    socket.on("hello", (arg) => {
+        console.log('================hello')
+        console.log(arg); // x8WIv7-mJelg7on_ALbx
+    });
+
+    socket.on("disconnect", () => {
+        console.log('================disconnect')
+        console.log(socket.id); // undefined
+    });
+</script>

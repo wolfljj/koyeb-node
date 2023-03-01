@@ -7,6 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "run": "node app.js"
   },
+  "engines": {
+    "node": "16.x"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/koyeb/example-expressjs.git"
