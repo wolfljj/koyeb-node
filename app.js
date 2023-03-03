@@ -35,6 +35,7 @@ wss.on('connection', function (ws, request) {
     //
     // Here we can now use session parameters.
     //
+    ws.send(`Your message ${message}`);
     console.log(`Received message ${message} from user`);
   });
 
