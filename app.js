@@ -1,10 +1,43 @@
 const express = require('express');
+const session = require('express-session');
 const http = require('http');
 const { WebSocketServer } = require('ws');
+const uuid = require('uuid');
 
 const app = express();
-const server = http.createServer(app);
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3000;
+const map = new Map();
+
+const sessionParser = session({
+  saveUninitialized: false,
+  secret: '$eCuRiTy',
+  resave: false
+});
+
+app.use(express.static('public'));
+app.use(sessionParser);
+
+app.post('/login', function (req, res) {
+  //
+  // "Log in" user and set userId to session.
+  //
+  const id = uuid.v4();
+
+  console.log(`Updating session for user ${id}`);
+  req.session.userId = id;
+  res.send({ result: 'OK', message: 'Session updated' });
+});
+
+app.post('/logout', function (request, response) {
+  const ws = map.get(request.session.userId);
+
+  console.log('Destroying session');
+  request.session.destroy(function () {
+    if (ws) ws.close();
+
+    response.send({ result: 'OK', message: 'Session destroyed' });
+  });
+});
 
 app.get('/', (req, res) => {
   res.json({
@@ -12,7 +45,9 @@ app.get('/', (req, res) => {
   })
 })
 
+const server = http.createServer(app);
 const wss = new WebSocketServer({ clientTracking: false, noServer: true });
+
 
 function onSocketError(err) {
   console.error(err);
@@ -22,21 +57,38 @@ server.on('upgrade', function (request, socket, head) {
   socket.on('error', onSocketError);
 
   console.log('Parsing session from request...');
-  wss.handleUpgrade(request, socket, head, function (ws) {
-    wss.emit('connection', ws, request);
+
+  sessionParser(request, {}, () => {
+    if (!request.session.userId) {
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    console.log('Session is parsed!');
+
+    socket.removeListener('error', onSocketError);
+
+    wss.handleUpgrade(request, socket, head, function (ws) {
+      wss.emit('connection', ws, request);
+    });
   });
+  // wss.handleUpgrade(request, socket, head, function (ws) {
+  //   wss.emit('connection', ws, request);
+  // });
 });
 
 wss.on('connection', function (ws, request) {
-  ws.send('connection');
+  const userId = request.session.userId;
+  map.set(userId, ws);
   ws.on('error', console.error);
 
   ws.on('message', function (message) {
     //
     // Here we can now use session parameters.
     //
-    ws.send(`Your message ${message}`);
-    console.log(`Received message ${message} from user`);
+    // ws.send(`Your message ${message}`);
+    console.log(`Received message ${message} from user ${userId}`);
   });
 
   ws.on('close', function () {
