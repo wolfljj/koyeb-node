@@ -28,7 +28,7 @@ server.on('upgrade', function (request, socket, head) {
 });
 
 wss.on('connection', function (ws, request) {
-
+  ws.send('connection');
   ws.on('error', console.error);
 
   ws.on('message', function (message) {
